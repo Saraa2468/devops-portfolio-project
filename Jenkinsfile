@@ -2,7 +2,8 @@ pipeline {
   agent any
 
   environment {
-    IMAGE = "your-docker-repo/devops-portfolio-flask:${env.BUILD_NUMBER}"
+    PATH ="/opt/venv/bin:${env.PATH}"
+    IMAGE = "sarasalah24/devops-portfolio-project:${env.BUILD_NUMBER}"
     DOCKER_CREDENTIALS_ID = 'dockerHubCreds' // set this in Jenkins credentials
   }
 
