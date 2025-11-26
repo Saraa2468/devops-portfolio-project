@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-flask
+  namespace: devops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: devops-flask
+  template:
+    metadata:
+      labels:
+        app: devops-flask
+    spec:
+      containers:
+        - name: devops-flask
+          image: devops-portfolio-flask:latest
+          ports:
+            - containerPort: 5000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 20
