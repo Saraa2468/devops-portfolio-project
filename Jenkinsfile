@@ -1,14 +1,10 @@
 pipeline {
-    agent {
-        docker {
-            image 'python:3.11'
-            args '-u root:root -v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+    agent any
 
     environment {
         IMAGE = "sarasalah24/devops-portfolio-project:${env.BUILD_NUMBER}"
         DOCKER_CREDENTIALS_ID = 'dockerHubCreds'
+        VENV = ".venv"
     }
 
     stages {
@@ -19,10 +15,21 @@ pipeline {
             }
         }
 
+        stage('Create Python venv') {
+            steps {
+                sh """
+                    python3 --version
+                    python3 -m venv $VENV
+                    . $VENV/bin/activate
+                    pip install --upgrade pip
+                """
+            }
+        }
+
         stage('Install Requirements') {
             steps {
                 sh """
-                    python -m pip install --upgrade pip
+                    . $VENV/bin/activate
                     pip install -r app/requirements.txt
                 """
             }
@@ -30,7 +37,10 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh "pytest -q || true"
+                sh """
+                    . $VENV/bin/activate
+                    pytest -q || true
+                """
             }
         }
 
@@ -43,8 +53,10 @@ pipeline {
         stage('Push Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
-                    sh "docker push $IMAGE"
+                    sh """
+                        echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+                        docker push $IMAGE
+                    """
                 }
             }
         }
@@ -54,6 +66,5 @@ pipeline {
                 sh "kubectl rollout restart deployment/devops-flask -n devops || true"
             }
         }
-
     }
 }
